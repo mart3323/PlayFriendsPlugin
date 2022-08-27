@@ -4,33 +4,7 @@ author: "Jochem Kuijpers"
 main: "playfriends.mc.plugin.Main"
 api-version: "1.19"
 commands:
-  chill:
-    description: "Chill mode: monsters can't attack you, and you can't attack them. Opposite of /thrill."
-    usage: "/chill"
-  thrill:
-    description: "Thrill mode: monsters can attack you, and you can attack them! Opposite of /chill."
-    usage: "/thrill"
-  zzz:
-    description: "Vote for skipping the night without having to sleep in a bed."
-    usage: "/zzz"
   perf:
     description: "Check the server's performance."
     usage: "/perf"
-  afktoggle:
-    description: "Toggle AFK detection."
-    usage: "/afktoggle"
-  keepinventory:
-    description: "Set which items to keep on death."
-    usage: "/keepinventory [none/armor/enchanted/all]"
-  keepxp:
-    description: "Toggle whether to keep your XP on death."
-    usage: "/keepxp"
-  pronouns:
-    description: "Set your pronouns for the hoverable nameplate."
-    usage: "/pronouns [The pronouns]"
-  discord:
-    description: "Set your discord username for the hoverable nameplate."
-    usage: "/discord [Discord name]"
-  list:
-    description: "Lists online players with their nameplates."
-    usage: "/list"
+depend: [CommandAPI]

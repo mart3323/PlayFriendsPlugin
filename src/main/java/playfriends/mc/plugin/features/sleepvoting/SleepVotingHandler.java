@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.*;
 import org.bukkit.plugin.Plugin;
 import playfriends.mc.plugin.MessageUtils;
+import playfriends.mc.plugin.ProxyableCommandAPICommand;
 import playfriends.mc.plugin.api.ConfigAwareListener;
 import playfriends.mc.plugin.features.afkdetection.AfkPlayerEvent;
 import playfriends.mc.plugin.playerdata.PlayerData;
@@ -71,6 +72,13 @@ public class SleepVotingHandler implements ConfigAwareListener {
         this.plugin = plugin;
         this.playerDataManager = playerDataManager;
         this.voteStateForWorld = new HashMap<>();
+
+        new ProxyableCommandAPICommand("zzz")
+            .executesPlayer((player, args) -> {
+                final World world = player.getWorld();
+                doSleepVoting(player, world, true, false, true);
+            })
+            .register();
     }
 
     @Override
@@ -140,13 +148,6 @@ public class SleepVotingHandler implements ConfigAwareListener {
         } else {
             doSleepVoting(player, world, player.isSleeping(), false, false);
         }
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerVoteByCommand(SleepingVotePlayerEvent event) {
-        final Player player = event.getPlayer();
-        final World world = player.getWorld();
-        doSleepVoting(player, world, true, false, true);
     }
 
     private void doSleepVoting(Player player, World world, boolean isSleeping, boolean didTeleport, boolean byCommand) {

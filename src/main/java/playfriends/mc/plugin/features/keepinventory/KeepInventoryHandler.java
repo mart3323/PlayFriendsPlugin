@@ -1,5 +1,10 @@
 package playfriends.mc.plugin.features.keepinventory;
 
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.MultiLiteralArgument;
+import dev.jorel.commandapi.arguments.PlayerArgument;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -7,6 +12,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import playfriends.mc.plugin.MessageUtils;
+import playfriends.mc.plugin.ProxyableCommandAPICommand;
 import playfriends.mc.plugin.api.ConfigAwareListener;
 import playfriends.mc.plugin.playerdata.KeepInventoryRule;
 import playfriends.mc.plugin.playerdata.PlayerData;
@@ -38,6 +44,20 @@ public class KeepInventoryHandler implements ConfigAwareListener {
 
 	public KeepInventoryHandler(PlayerDataManager playerDataManager) {
 		this.playerDataManager = playerDataManager;
+
+		new ProxyableCommandAPICommand("keepxp")
+			.executesPlayer((sender, args) -> {
+				this.toggleKeepXp(sender);
+			})
+			.register();
+
+		new ProxyableCommandAPICommand("keepinventory")
+			.withArguments(new MultiLiteralArgument("all", "armor", "enchanted", "none"))
+			.executesPlayer((sender, args) -> {
+				KeepInventoryRule newKeepInventoryRule = KeepInventoryRule.valueOf(((String) args[0]).toUpperCase());
+				this.setKeepInventory(sender, newKeepInventoryRule);
+			})
+			.register();
 	}
 
 	@Override
@@ -53,14 +73,10 @@ public class KeepInventoryHandler implements ConfigAwareListener {
 		keepXpEnabledMessage = newConfig.getString("keepinventory.messages.set-xp-enabled");
 	}
 
-	@EventHandler
-	public void onPlayerKeepInventory(PlayerKeepInventoryEvent event) {
-		final Player player = event.getPlayer();
+	public void setKeepInventory(Player player, KeepInventoryRule rule) {
 		final PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
-		final KeepInventoryRule newKeepInventoryRule = event.getKeepInventoryRule();
-		playerData.setKeepInventory(newKeepInventoryRule);
-
-		final String message = switch (newKeepInventoryRule) {
+		playerData.setKeepInventory(rule);
+		final String message = switch (rule) {
 			case NONE -> keepInventoryNoneMessage;
 			case ARMOR -> keepInventoryArmorMessage;
 			case ENCHANTED -> keepInventoryEnchantedMessage;
@@ -69,8 +85,7 @@ public class KeepInventoryHandler implements ConfigAwareListener {
 		player.sendMessage(MessageUtils.formatMessage(message));
 	}
 
-	@EventHandler void onPlayerKeepXp(PlayerKeepXpEvent event) {
-		final Player player = event.getPlayer();
+	void toggleKeepXp(Player player) {
 		final PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
 		boolean keepXp = !playerData.isKeepXp();
 

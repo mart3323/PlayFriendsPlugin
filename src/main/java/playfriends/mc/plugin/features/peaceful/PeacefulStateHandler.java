@@ -10,6 +10,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 import playfriends.mc.plugin.MessageUtils;
+import playfriends.mc.plugin.ProxyableCommandAPICommand;
 import playfriends.mc.plugin.api.ConfigAwareListener;
 import playfriends.mc.plugin.features.afkdetection.AfkPlayerEvent;
 import playfriends.mc.plugin.playerdata.PlayerData;
@@ -36,6 +37,17 @@ public class PeacefulStateHandler implements ConfigAwareListener {
     public PeacefulStateHandler(PlayerDataManager playerDataManager, Logger logger) {
         this.playerDataManager = playerDataManager;
         this.logger = logger;
+
+        new ProxyableCommandAPICommand("chill")
+            .executesPlayer((player, args) -> {
+                this.setPlayerPeaceful(player, true);
+            })
+            .register();
+        new ProxyableCommandAPICommand("thrill")
+            .executesPlayer((player, args) -> {
+                this.setPlayerPeaceful(player, false);
+            })
+            .register();
     }
 
     @Override
@@ -119,13 +131,11 @@ public class PeacefulStateHandler implements ConfigAwareListener {
         }
     }
 
-    @EventHandler
-    public void onPlayerPeaceful(PeacefulTogglePlayerEvent event) {
-        final Player player = event.getPlayer();
+    public void setPlayerPeaceful(Player player, boolean peaceful) {
         final String name = player.getDisplayName();
         final PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
 
-        if (event.isPeaceful()) {
+        if (peaceful) {
             if (playerData.isPeaceful()) {
                 player.sendMessage(MessageUtils.formatMessageWithPlayerName(alreadyPeacefulMessage, name));
                 return;

@@ -1,7 +1,10 @@
 package playfriends.mc.plugin.features.playerprofile;
 
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -9,6 +12,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.Plugin;
 import playfriends.mc.plugin.MessageUtils;
+import playfriends.mc.plugin.ProxyableCommandAPICommand;
 import playfriends.mc.plugin.api.ConfigAwareListener;
 import playfriends.mc.plugin.playerdata.PlayerData;
 import playfriends.mc.plugin.playerdata.PlayerDataManager;
@@ -32,6 +36,24 @@ public class PlayerProfileHandler implements ConfigAwareListener {
     public PlayerProfileHandler(Plugin plugin, PlayerDataManager playerDataManager) {
         this.playerDataManager = playerDataManager;
         this.plugin = plugin;
+
+        new ProxyableCommandAPICommand("discord")
+            .withArguments(new GreedyStringArgument("discord name"))
+            .executesPlayer((player, args) -> {
+                this.setDiscord(player, player, (String) args[0]);
+            })
+            .register();
+        new ProxyableCommandAPICommand("pronouns")
+            .withArguments(new GreedyStringArgument("pronouns"))
+            .executesPlayer((player, args) -> {
+                this.setDiscord(player, player, (String) args[0]);
+            })
+            .register();
+        new ProxyableCommandAPICommand("list")
+            .executes((sender, args) -> {
+                list(sender);
+            })
+            .register();
     }
 
     @Override
@@ -91,34 +113,31 @@ public class PlayerProfileHandler implements ConfigAwareListener {
         event.setCancelled(true);
     }
 
-    @EventHandler
-    public void onSetPronouns(SetPronounsEvent event) {
-        Player player = event.getPlayer();
+    public void setPronouns(CommandSender sender, Player player, String pronouns) {
         playerDataManager.getPlayerData(player.getUniqueId())
-            .setPronouns(event.getPronouns());
-        player.sendMessage(MessageUtils.formatMessageWithPlaceholder(
+            .setPronouns(pronouns);
+        String message = MessageUtils.formatMessageWithPlaceholder(
             pronounsSetMessage,
             "{{PRONOUNS}}",
-            event.getPronouns()
-        ));
+            pronouns
+        );
+        player.sendMessage(message);
+        if (sender != player) sender.sendMessage(message);
     }
 
-    @EventHandler
-    public void onSetDiscord(SetDiscordEvent event) {
-        Player player = event.getPlayer();
+    public void setDiscord(CommandSender sender, Player player, String discord) {
         playerDataManager.getPlayerData(player.getUniqueId())
-            .setDiscordName(event.getDiscord());
-        player.sendMessage(MessageUtils.formatMessageWithPlaceholder(
+            .setDiscordName(discord);
+        String message = MessageUtils.formatMessageWithPlaceholder(
             discordSetMessage,
             "{{DISCORD}}",
-            event.getDiscord()
-        ));
+            discord
+        );
+        player.sendMessage(message);
+        if (sender != player) sender.sendMessage(message);
     }
 
-    @EventHandler
-    public void onListCommand(ListPlayersEvent event) {
-        final Player sender = event.getPlayer();
-
+    public void list(CommandSender sender) {
         // Get a list of players sorted by their display names
         final List<? extends Player> sortedPlayers = new ArrayList<>(plugin.getServer().getOnlinePlayers());
         sortedPlayers.sort(Comparator.comparing(Player::getDisplayName));

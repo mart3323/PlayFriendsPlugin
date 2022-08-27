@@ -10,6 +10,7 @@ import org.bukkit.event.player.PlayerVelocityEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import playfriends.mc.plugin.MessageUtils;
+import playfriends.mc.plugin.ProxyableCommandAPICommand;
 import playfriends.mc.plugin.api.ConfigAwareListener;
 import playfriends.mc.plugin.playerdata.PlayerData;
 import playfriends.mc.plugin.playerdata.PlayerDataManager;
@@ -17,7 +18,9 @@ import playfriends.mc.plugin.playerdata.PlayerDataManager;
 import java.time.Clock;
 import java.time.Instant;
 
-/** The AFK event handler, handles events related to AFK detection. */
+/**
+ * The AFK event handler, handles events related to AFK detection.
+ */
 public class AfkDetectionHandler implements ConfigAwareListener {
     private final PlayerDataManager playerDataManager;
     private final PluginManager pluginManager;
@@ -32,6 +35,12 @@ public class AfkDetectionHandler implements ConfigAwareListener {
         this.playerDataManager = playerDataManager;
         this.pluginManager = plugin.getServer().getPluginManager();
         this.clock = clock;
+
+        new ProxyableCommandAPICommand("toggleafk")
+            .executesPlayer((player, args) -> {
+                this.togglePlayerAfk(player);
+            })
+            .register();
     }
 
     @Override
@@ -66,9 +75,7 @@ public class AfkDetectionHandler implements ConfigAwareListener {
         }
     }
 
-    @EventHandler
-    public void onPlayerAfkToggle(AfkTogglePlayerEvent event) {
-        final Player player = event.getPlayer();
+    public void togglePlayerAfk(Player player) {
         final PlayerData data = playerDataManager.getPlayerData(player.getUniqueId());
 
         // Toggle AFK detection

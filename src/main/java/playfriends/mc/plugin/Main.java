@@ -5,7 +5,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -13,31 +12,20 @@ import playfriends.mc.plugin.api.ConfigAwareListener;
 import playfriends.mc.plugin.api.ScheduledTask;
 import playfriends.mc.plugin.features.afkdetection.AfkDetectionHandler;
 import playfriends.mc.plugin.features.afkdetection.AfkDetectionTask;
-import playfriends.mc.plugin.features.afkdetection.AfkTogglePlayerEvent;
 import playfriends.mc.plugin.features.greeting.PlayerGreetingHandler;
 import playfriends.mc.plugin.features.keepinventory.KeepInventoryHandler;
-import playfriends.mc.plugin.features.keepinventory.PlayerKeepInventoryEvent;
-import playfriends.mc.plugin.features.keepinventory.PlayerKeepXpEvent;
 import playfriends.mc.plugin.features.peaceful.PeacefulMobTargetingHandler;
 import playfriends.mc.plugin.features.peaceful.PeacefulStateHandler;
-import playfriends.mc.plugin.features.peaceful.PeacefulTogglePlayerEvent;
 import playfriends.mc.plugin.features.perf.PerformanceEvent;
 import playfriends.mc.plugin.features.perf.PerformanceHandler;
 import playfriends.mc.plugin.features.perf.PerformanceMonitor;
 import playfriends.mc.plugin.features.perf.PerformanceMonitorTask;
-import playfriends.mc.plugin.features.playerprofile.ListPlayersEvent;
-import playfriends.mc.plugin.features.playerprofile.SetDiscordEvent;
-import playfriends.mc.plugin.features.playerprofile.SetPronounsEvent;
 import playfriends.mc.plugin.features.playerprofile.PlayerProfileHandler;
 import playfriends.mc.plugin.features.sleepvoting.SleepVotingHandler;
-import playfriends.mc.plugin.features.sleepvoting.SleepingVotePlayerEvent;
-import playfriends.mc.plugin.playerdata.KeepInventoryRule;
 import playfriends.mc.plugin.playerdata.PlayerDataManager;
 import playfriends.mc.plugin.playerdata.SavePlayerDataTask;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /** Main entry point for the plugin. */
@@ -119,29 +107,8 @@ public class Main extends JavaPlugin implements TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         switch(command.getName()) {
             // These commands have no arguments
-            case "chill":
-            case "thrill":
-            case "zzz":
-            case "afktoggle":
-            case "keepxp":
             case "perf":
-            case "list":
                 return List.of();
-
-            // These commands have arguments, but they are not autocompletable
-            // Syntax hints are not available via this API, for that the commands would have to be registered through Brigadier API
-            case "pronouns":
-            case "discord":
-                return List.of();
-
-            // Optionally could filter to only those options that match what the user has typed so far
-            // but i don't think there's any value gained from filtering a list of four options
-            case "keepinventory":
-                List<String> options = new ArrayList<>();
-                for (KeepInventoryRule value : KeepInventoryRule.values()) {
-                    options.add(value.name().toLowerCase());
-                }
-                return options;
 
             // all other commands should fall back to the default executor
             default:
@@ -152,89 +119,7 @@ public class Main extends JavaPlugin implements TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         switch (command.getName()) {
-            case "chill" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new PeacefulTogglePlayerEvent(player, true));
-                } else {
-                    sender.sendMessage(ONLY_PLAYERS_CAN_USE_THIS_COMMAND_MSG);
-                }
-            }
-            case "thrill" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new PeacefulTogglePlayerEvent(player, false));
-                } else {
-                    sender.sendMessage(ONLY_PLAYERS_CAN_USE_THIS_COMMAND_MSG);
-                }
-            }
-            case "zzz" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new SleepingVotePlayerEvent(player));
-                } else {
-                    sender.sendMessage(ONLY_PLAYERS_CAN_USE_THIS_COMMAND_MSG);
-                }
-            }
-            case "afktoggle" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new AfkTogglePlayerEvent(player));
-                } else {
-                    sender.sendMessage(ONLY_PLAYERS_CAN_USE_THIS_COMMAND_MSG);
-                }
-            }
-            case "keepinventory" -> {
-                if (sender instanceof Player player) {
-                    if (args.length != 1) {
-                        return false;
-                    }
-                    KeepInventoryRule selectedRule = null;
-                    for (KeepInventoryRule value : KeepInventoryRule.values()) {
-                        if (value.name().equalsIgnoreCase(args[0])) {
-                            selectedRule = value;
-                            break;
-                        }
-                    }
-                    if (selectedRule == null) {
-                        sender.sendMessage(ChatColor.RED + "Invalid option.");
-                        return false;
-                    }
-                    pluginManager.callEvent(new PlayerKeepInventoryEvent(player, selectedRule));
-                } else {
-                    sender.sendMessage(ONLY_PLAYERS_CAN_USE_THIS_COMMAND_MSG);
-                }
-            }
-            case "keepxp" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new PlayerKeepXpEvent(player));
-                } else {
-                    sender.sendMessage(ONLY_PLAYERS_CAN_USE_THIS_COMMAND_MSG);
-                }
-            }
             case "perf" -> pluginManager.callEvent(new PerformanceEvent(sender));
-            case "pronouns" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new SetPronounsEvent(player, String.join(" ",args)));
-                } else {
-                    sender.sendMessage("Only players can use this command.");
-                }
-            }
-            case "discord" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new SetDiscordEvent(player, String.join(" ",args)));
-                } else {
-                    sender.sendMessage("Only players can use this command.");
-                }
-            }
-            case "list" -> {
-                if (sender instanceof Player player) {
-                    pluginManager.callEvent(new ListPlayersEvent(player));
-                } else {
-                    final List<? extends Player> sortedPlayers = new ArrayList<>(this.getServer().getOnlinePlayers());
-                    sortedPlayers.sort(Comparator.comparing(Player::getDisplayName));
-                    sender.sendMessage("Players online: " + sortedPlayers.size() + "/" + this.getServer().getMaxPlayers());
-                    for (Player player : sortedPlayers) {
-                        sender.sendMessage(" * " + player.getName());
-                    }
-                }
-            }
             default     -> {
                 sender.sendMessage(ChatColor.RED + "I don't know a command named " + command.getName() + "!");
                 return false;
